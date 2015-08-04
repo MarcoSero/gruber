@@ -1,37 +1,30 @@
 # gruber
 
-This is a new package created by [Haskeleton][]. To finish setting it up, look
-for "TODO"s in the Cabal file and in the library itself. To quickly get up and
-running, simply run `make`. See below for more detailed instructions.
+A not very functional (yet) Markdown parser written in Haskell
 
-[haskeleton]: http://taylor.fausak.me/haskeleton/
+:warning: This is a WIP :warning: 
 
-``` sh
-# Update Cabal's list of packages.
-cabal update
+## Features, aka what it can parse
 
-# Initialize a sandbox and install the package's dependencies.
-make install
+- Headings
+- Inline formatting inside headings
 
-# Configure & build the package.
-make configure
-make build
+That's it.
 
-# Test package.
-make test
+## Spec
 
-# Benchmark package.
-make bench
+I'm basing the implementation of the grammar on the latest
+[CommonMark spec](http://spec.commonmark.org/0.20/)
 
-# Run executable.
-make run
+## Name
 
-# Start REPL.
-make repl
+I hope it's not going to be an issue using the name of the creator of Markdown,
+John Gruber, as the name of the library.  
+If I'll get any complaint I'll be happy to rename it.
 
-# Generate documentation.
-make haddock
+## Contact
+[marcosero.com](http://www.marcosero.com)  
+[@marcosero](http://twitter.com/marcosero)
 
-# Analyze coverage.
-make hpc
-```
+## License
+MIT
