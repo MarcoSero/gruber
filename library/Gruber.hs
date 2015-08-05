@@ -4,25 +4,26 @@ import Control.Applicative ((<$>), (<*), (<|>))
 import Control.Monad (void)
 import Text.Parsec.Char
 import Text.Parsec.Combinator
-import Text.Parsec.Prim (many, parse, try)
+import Text.Parsec.Prim (many, parse, try, skipMany)
 import Text.Parsec.String
 
 data Inline =
-        Emphasis String |
-        StrongEmphasis String |
-        Code String |
-        NotFormatted String
-        deriving (Eq, Show, Ord)
+                Emphasis String
+            |   StrongEmphasis String
+            |   Code String
+            |   NotFormatted String
+            deriving (Eq, Show, Ord)
 
 type Paragraph = [Inline]
 
-data Component =
-                Heading1 Paragraph |
-                Heading2 Paragraph |
-                Heading3 Paragraph |
-                Heading4 Paragraph |
-                Heading5 Paragraph |
-                Heading6 Paragraph
+data Component  =
+                    Heading1 Paragraph
+                |   Heading2 Paragraph
+                |   Heading3 Paragraph
+                |   Heading4 Paragraph
+                |   Heading5 Paragraph
+                |   Heading6 Paragraph
+                |   HorizontalRule
                 deriving (Show, Eq, Ord)
 
 type Document = [Component]
@@ -41,6 +42,7 @@ inline = do
 paragraphParser :: Parser Paragraph
 paragraphParser = many inline <* endOfLine
 
+-- http://spec.commonmark.org/0.20/#atx-header
 headingParser :: Parser Component
 headingParser = do
         try (Heading1 <$> (string "# " >> paragraphParser))
@@ -50,11 +52,28 @@ headingParser = do
     <|> try (Heading5 <$> (string "##### " >> paragraphParser))
     <|> try (Heading6 <$> (string "###### " >> paragraphParser))
 
-consumeEndOfLine :: Parser ()
-consumeEndOfLine = void endOfLine
+eol :: Parser ()
+eol = void endOfLine
+
+-- http://spec.commonmark.org/0.20/#horizontal-rules
+horizontalRuleParser :: Parser Component
+horizontalRuleParser = do
+            (try $ matchHorizontalRule '*')
+        <|> (try $ matchHorizontalRule '-')
+        <|> (try $ matchHorizontalRule '_')
+            where matchHorizontalRule c = do
+                    _ <- string (replicate 3 c)
+                    _ <- manyTill (oneOf [' ', c]) (oneOf "\n") 
+                    return HorizontalRule 
+
 
 componentParser :: Parser Component
-componentParser = headingParser <* (try consumeEndOfLine <|> try eof)
+componentParser = 
+            (
+            try headingParser
+        <|> try horizontalRuleParser
+            )
+        <* skipMany (eol)
 
 documentParser :: Parser Document
 documentParser = many componentParser <* eof
