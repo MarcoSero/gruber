@@ -1,16 +1,15 @@
 module Gruber (module Gruber) where
 
-import Control.Applicative ((<$>), (<*), (<|>))
+import Control.Applicative ((<$>), (<*))
 import Control.Monad (void)
-import Text.Parsec.Char
-import Text.Parsec.Combinator
-import Text.Parsec.Prim (many, parse, try, skipMany)
+import Text.Parsec
 import Text.Parsec.String
 
 data Inline =
-                Emphasis String
-            |   StrongEmphasis String
+                Emphasis Inline
+            |   StrongEmphasis Inline
             |   Code String
+            |   Strikethrough Inline
             |   NotFormatted String
             deriving (Eq, Show, Ord)
 
@@ -28,16 +27,18 @@ data Component  =
 
 type Document = [Component]
 
-inline :: Parser Inline
-inline = do
-            try (Emphasis <$> (detectInline '_'))
-        <|> try (StrongEmphasis <$> (detectInline '*'))
-        <|> try (NotFormatted <$> (many1 (noneOf "\n_*")))
-            where detectInline c = do
-                    _ <- string [c]
-                    t <- many1 (noneOf [c, '\n'])
-                    _ <- string [c]
-                    return t
+inline :: Parsec String () Inline
+inline = recurse <|> terminal
+    where   terminal = do
+                    let reservedChars = "\n*_`"
+                    try (NotFormatted <$> many1 (noneOf reservedChars))
+                <|> try (Code <$> between (string "`") (string "`") (many (noneOf "\n")))
+            recurse = do
+                    try (Emphasis <$> between (string "_") (string "_") inline)
+                <|> try (Emphasis <$> between (string "__") (string "__") inline)
+                <|> try (StrongEmphasis <$> between (string "*") (string "*") inline)
+                <|> try (StrongEmphasis <$> between (string "**") (string "**") inline)
+                <|> try (Strikethrough <$> between (string "~~") (string "~~") inline)
 
 paragraphParser :: Parser Paragraph
 paragraphParser = many inline <* endOfLine
